@@ -11,6 +11,10 @@ import data
 import hermes
 import threading
 
+import plotly.io as pio  # Import the Plotly IO module
+
+# Set the desired theme
+pio.templates.default = "plotly_dark" 
 
 data.set_interval(data.update_df,10)
 
@@ -22,6 +26,7 @@ app = dash.Dash(__name__)
 
 # Define the app layout
 app.layout = html.Div([
+    html.H1("Total Index", style={'color': '#ffffff'}),
     dcc.Graph(id='scatter-plot'),
     
     dcc.Interval(
@@ -29,7 +34,16 @@ app.layout = html.Div([
         interval=5 * 1000,  # Update every 10 seconds (in milliseconds)
         n_intervals=0
     )
-])
+],
+    style={
+        'backgroundColor': '#111111',
+        'color': '#ffffff',
+        'fontFamily': 'Arial, sans-serif',
+        'padding': '20px',
+        'margin': '0 auto',
+        'maxWidth': '800px'
+    }
+)
 
 # Update the scatter plot every 10 seconds
 @app.callback(
@@ -37,13 +51,6 @@ app.layout = html.Div([
     Input('interval-component', 'n_intervals')
 )
 def update_scatter_plot(n):
-    # time = datetime.datetime.now().strftime('%H:%M:%S')
-    # stock_df = hermes.Market_with_askbid()
-    # ti = data.calc_total_index(stock_df)
-    # new_data = {'time': time, 'index': ti}
-    # print(time)
-    # print(ti)
-    # df.loc[len(df)] = new_data
 
     # Create the scatter plot
     fig = go.Figure(data=go.Scatter(
@@ -57,6 +64,10 @@ def update_scatter_plot(n):
         dict(dtickrange=[60000, 3600000], value="%H:%M m"),
         dict(dtickrange=[3600000, 86400000], value="%H:%M h")
     ])
+    fig.update_layout(
+        xaxis_title="Time",
+        yaxis_title="Index",
+    )
     return fig
 
 # Run the app
