@@ -6,15 +6,23 @@ import threading
 import time 
 import datetime
 import hermes
-df = pd.DataFrame(columns=['index', 'time'])
+
+dft = pd.DataFrame(columns=['index', 'time'])
+dff = pd.DataFrame(columns=['index', 'time'])
 
 def update_df():
-    global df
+    global dft
+    global dff
     time = datetime.datetime.now().strftime('%H:%M:%S')
     stock_df = hermes.Market_with_askbid()
     ti = calc_total_index(stock_df)
-    new_data = {'time': time, 'index': ti}
-    df.loc[len(df)] = new_data
+    fi = calc_funds_index(stock_df)
+    new_data_total = {'time': time, 'index': ti}
+    new_data_fund = {'time': time, 'index': fi}
+
+    dft.loc[len(dft)] = new_data_total
+    dff.loc[len(dff)] = new_data_fund
+
 
 def set_interval(func, sec):
     def func_wrapper():
