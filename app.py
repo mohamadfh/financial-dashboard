@@ -1,19 +1,20 @@
+import dash
+from dash import dcc, html
+from dash.dependencies import Input, Output
+import plotly.graph_objects as go
 import pandas as pd
-import numpy as np
-from hermes import Market_with_askbid
-from typing import Union
+import random
+import datetime
 
-def total_index(df: pd.DataFrame) -> float:
-    weighted_sum = (df['last_return'] * df['value']).sum()
-    total_weight = df['value'].sum()
-    weighted_average = weighted_sum / total_weight
-    return weighted_average
+# Create a Dash app
+app = dash.Dash(__name__)
 
-def filter_funds(df: pd.DataFrame) -> pd.DataFrame:
-    return df[df['isin'].str.startswith('IRT')]
+# Define the app layout
+app.layout = html.Div([
+    "Total Index:"
+])
 
-if __name__ == "__main__":
-    df = Market_with_askbid()
-    print("fetched")
-    print(total_index(df))
-    print(total_index(filter_funds(df)))
+
+# Run the app
+if __name__ == '__main__':
+    app.run_server(debug=True)
