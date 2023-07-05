@@ -92,16 +92,10 @@ def update_scatter_plot(n, pathname):
             x=data.dff['time'],
             y=data.dff['index'],
         ))
-    fig.update_xaxes(
-        rangeslider_visible=True,
-        tickformatstops=[
-            dict(dtickrange=[None, 60000], value="%H:%M:%S s"),
-            dict(dtickrange=[60000, 3600000], value="%H:%M m"),
-            dict(dtickrange=[3600000, 86400000], value="%H:%M h")
-        ])
     fig.update_layout(
         xaxis_title="Time",
         yaxis_title="Index",
+        xaxis_dtick=10
     )
 
     return fig
