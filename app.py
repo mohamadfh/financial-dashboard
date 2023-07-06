@@ -17,7 +17,7 @@ app.layout = html.Div([
     html.Div(
         dbc.Nav(
             [
-                dbc.NavItem(dbc.NavLink("Total Index", href="/total", style={'marginRight': '10px'})),
+                dbc.NavItem(dbc.NavLink("Total Index", href="/total")),
                 dbc.NavItem(dbc.NavLink("Funds Index", href="/funds")),
             ],
             navbar=True,
@@ -56,7 +56,7 @@ def render_page_content(pathname):
     elif pathname == '/funds':
         return page2_layout
     else:
-        return page1_layout  # Default to page 1 layout if the URL is invalid
+        return page1_layout 
 
 
 # Update the scatter plot every 5 seconds
@@ -68,18 +68,21 @@ def render_page_content(pathname):
 def update_scatter_plot(n, pathname):
     if pathname == '/funds':
         fig = go.Figure(data=go.Scatter(
-            x=data.total_index_df['datetime'],
-            y=data.total_index_df['value'],
+            x=data.funds_index_df['datetime'],
+            y=data.funds_index_df['value'],
         ))
     else:
         fig = go.Figure(data=go.Scatter(
-            x=data.funds_index_df['datetime'],
-            y=data.funds_index_df['value'],
+            x=data.total_index_df['datetime'],
+            y=data.total_index_df['value'],
         ))
     fig.update_layout(
         xaxis_title="Time",
         yaxis_title="Index",
+        autosize=True
     )
+    fig['layout']['yaxis'].update(autorange=True)
+    fig['layout']['xaxis'].update(autorange=True)
 
     return fig
 
