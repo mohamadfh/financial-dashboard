@@ -2,63 +2,48 @@ import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
 import plotly.graph_objects as go
-import pandas as pd
-import time
-import datetime
 import data
-import hermes
-import threading
-import plotly.io as pio  
+import dash_bootstrap_components as dbc
 
-pio.templates.default = "plotly_dark"
 
-data.set_interval(data.update_df, 10)
+data.set_interval(data.update_dfs, 10)
 
 # Create a Dash app
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 
 # Define the app layout
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
+    html.Div(
+        dbc.Nav(
+            [
+                dbc.NavItem(dbc.NavLink("Total Index", href="/total", style={'marginRight': '10px'})),
+                dbc.NavItem(dbc.NavLink("Funds Index", href="/funds")),
+            ],
+            navbar=True,
+        )
+    ),
     html.Div(id='page-content'),
     dcc.Graph(id='scatter-plot'),
-    html.Div([
-        dcc.Link('total index', href='/total', style={'marginRight': '10px'}),
-        dcc.Link('funds index', href='/funds')
-    ],
-        style={'textAlign': 'center', 'marginTop': '20px'}
-    ),
 
     dcc.Interval(
         id='interval-component',
-        interval=5 * 1000,  # Update every 10 seconds (in milliseconds)
+        interval=5 * 1000,  # Update every 5 seconds (in milliseconds)
         n_intervals=0
     )
-], style={    'backgroundColor': '#111111'})
+])
 
-figure_style ={
-    'backgroundColor': '#111111',
-    'color': '#ffffff',
-    'fontFamily': 'Arial, sans-serif',
-    'padding': '20px',
-    'margin': '0 auto',
-    'maxWidth': '800px'
-}
 # Page 1 layout
 page1_layout = html.Div([
-    html.H1("Total Index", style={'color': '#ffffff'}),
+    html.H1("Total Index"),
 ],
-    style=figure_style
 )
-
 
 # Page 2 layout
 page2_layout = html.Div([
-    html.H1("funds Index", style={'color': '#ffffff'}),
+    html.H1("Funds Index"),
 ],
-    style=figure_style
 )
-
 
 
 @app.callback(
@@ -74,28 +59,26 @@ def render_page_content(pathname):
         return page1_layout  # Default to page 1 layout if the URL is invalid
 
 
-
 # Update the scatter plot every 5 seconds
 @app.callback(
     Output('scatter-plot', 'figure'),
     [Input('interval-component', 'n_intervals'),
-    Input('url', 'pathname')]
+     Input('url', 'pathname')]
 )
 def update_scatter_plot(n, pathname):
     if pathname == '/funds':
         fig = go.Figure(data=go.Scatter(
-            x=data.dft['time'],
-            y=data.dft['index'],
+            x=data.total_index_df['datetime'],
+            y=data.total_index_df['value'],
         ))
     else:
         fig = go.Figure(data=go.Scatter(
-            x=data.dff['time'],
-            y=data.dff['index'],
+            x=data.funds_index_df['datetime'],
+            y=data.funds_index_df['value'],
         ))
     fig.update_layout(
         xaxis_title="Time",
         yaxis_title="Index",
-        xaxis_dtick=10
     )
 
     return fig

@@ -1,47 +1,80 @@
 import pandas as pd
-import numpy as np
-from hermes import Market_with_askbid
-from typing import Union
 import threading
-import time 
 import datetime
 import hermes
+import os
+import dbcontrollers
+from dotenv import load_dotenv
 
-dft = pd.DataFrame(columns=['index', 'time'])
-dff = pd.DataFrame(columns=['index', 'time'])
+load_dotenv()  # take environment variables from .env.
 
-def update_df():
-    global dft
-    global dff
-    time = datetime.datetime.now().strftime('%H:%M:%S')
+dbconn = dbcontrollers.init_connection(os.environ.get("DATABASE"),os.environ.get("USER"),os.environ.get("PASSWORD"),os.environ.get("HOST"),int(os.environ.get("PORT")))
+dbcontrollers.add_table(dbconn,"fundsindices","value FLOAT, datetime TIMESTAMP")
+dbcontrollers.add_table(dbconn,"totalindices","value FLOAT, datetime TIMESTAMP")
+
+total_index_df = pd.DataFrame(columns=['value', 'datetime'])
+funds_index_df = pd.DataFrame(columns=['value', 'datetime'])
+
+
+def execute_within_time_interval(start_time, end_time):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            current_time = datetime.datetime.now().time()
+
+            if start_time <= current_time <= end_time:
+                return func(*args, **kwargs)
+            else:
+                pass
+
+        return wrapper
+
+    return decorator
+
+
+@execute_within_time_interval(datetime.time(9, 0), datetime.time(12, 30))
+def update_dfs():
+    global total_index_df
+    global funds_index_df
+    time = datetime.datetime.now()
     stock_df = hermes.Market_with_askbid()
-    ti = calc_total_index(stock_df)
-    fi = calc_funds_index(stock_df)
-    new_data_total = {'time': time, 'index': ti}
-    new_data_fund = {'time': time, 'index': fi}
-
-    dft.loc[len(dft)] = new_data_total
-    dff.loc[len(dff)] = new_data_fund
+    total_index = calc_total_index(stock_df)
+    funds_index = calc_funds_index(stock_df)
+    total_new_data = {'datetime': time, 'value': total_index}
+    funds_new_data = {'datetime': time, 'value': funds_index}
+    total_index_df.loc[len(total_index_df)] = total_new_data
+    funds_index_df.loc[len(funds_index_df)] = funds_new_data
+    #store in db:
+    cursor = dbconn.cursor()
+    insert_query = "INSERT INTO totalindices (value, datetime) VALUES (%s, %s);".format()
+    cursor.execute(insert_query, (total_index, time))
+    dbconn.commit()
+    insert_query = "INSERT INTO fundsindices (value, datetime) VALUES (%s, %s);".format()
+    cursor.execute(insert_query, (funds_index, time))
+    dbconn.commit()
+    cursor.close()
 
 
 def set_interval(func, sec):
     def func_wrapper():
-        set_interval(func, sec) 
-        func()  
+        set_interval(func, sec)
+        func()
+
     t = threading.Timer(sec, func_wrapper)
     t.start()
     return t
+
 
 def calc_total_index(df: pd.DataFrame) -> float:
     last_return = df['last_return'].astype(float)
     value = df['value'].astype(float)
     weighted_avg = (last_return * value).sum() / value.sum()
+
     return weighted_avg
+
 
 def filter_funds(df: pd.DataFrame) -> pd.DataFrame:
     return df[df['isin'].str.startswith('IRT')]
 
+
 def calc_funds_index(df: pd.DataFrame) -> float:
     return calc_total_index(filter_funds(df))
-
-
